@@ -12,7 +12,9 @@ A lightning-fast AI agent built with Python, powered by Groq's Llama 3.1 models.
 - **Function Calling**: Real-time integration with Python functions.
 - **Environment Driven**: Secure configuration using `.env` files.
 - **Interactive UI**: Built with Streamlit for a clean, chat-like experience.
+- **Global Timezone Support**: Powered by `pytz` to accurately check time anywhere in the world.
 - **Agentic Loop**: The AI thinks, calls a tool, observes the result, and responds naturally.
+
 
 
 ## 🛠️ Setup
@@ -58,7 +60,8 @@ Or run the terminal-based agent:
 
 ## 🧠 How it Works
 
-1. **User asks a question**: "What time is it?"
-2. **AI Decides**: The model realizes it doesn't know the time but has a `get_current_time` tool.
-3. **Tool Execution**: Python runs `datetime.now()` and returns the string to the AI.
-4. **Final Response**: The AI incorporates the time into a friendly message.
+1. **User asks a question**: "What time is it in Tokyo?"
+2. **AI Decides**: The model identifies the location and calls the `get_current_time` tool with `location="Asia/Tokyo"`.
+3. **Tool Execution**: Python uses `pytz` to calculate the exact time for that zone.
+4. **Final Response**: The AI gives you the precise time for the requested city.
+
