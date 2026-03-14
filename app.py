@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import pytz
 from groq import Groq
 from datetime import datetime
 from dotenv import load_dotenv
@@ -14,30 +15,37 @@ st.caption("Powered by Groq & Llama 3.1")
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # --- 2. THE TOOL ---
-def get_current_time():
-    return datetime.now().strftime("%I:%M %p")
+def get_current_time(location=None):
+    try:
+        if location:
+            # Simple mapping for common cities/locations if needed, 
+            # but pytz handles many standard ones.
+            tz = pytz.timezone(location)
+            now = datetime.now(tz)
+            return f"{now.strftime('%I:%M %p')} ({location})"
+        else:
+            # Default to UTC or a specific local time
+            now = datetime.now()
+            return f"{now.strftime('%I:%M %p')} (Local Server Time)"
+    except Exception:
+        # Fallback if timezone is not found
+        now = datetime.now()
+        return f"{now.strftime('%I:%M %p')} (Local Server Time)"
 
 # --- 3. THE UI LOGIC ---
-# Initialize chat history so it doesn't disappear on refresh
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Display chat messages from history on app rerun
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# React to user input
-if prompt := st.chat_input("Ask me for the time..."):
-    # Display user message
+if prompt := st.chat_input("Ask me for the time... e.g., 'What time is it in London?'"):
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    # Agent Logic
     with st.chat_message("assistant"):
         with st.status("Agent is thinking...", expanded=True) as status:
-            
-            # Initial call to see if it needs the tool
             response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[{"role": "user", "content": prompt}],
@@ -45,7 +53,16 @@ if prompt := st.chat_input("Ask me for the time..."):
                     "type": "function",
                     "function": {
                         "name": "get_current_time",
-                        "description": "Get the current time."
+                        "description": "Get the current time for a specific location.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string",
+                                    "description": "The location or timezone (e.g., 'America/New_York', 'Europe/London', 'Asia/Karachi')."
+                                }
+                            }
+                        }
                     }
                 }]
             )
@@ -54,7 +71,13 @@ if prompt := st.chat_input("Ask me for the time..."):
             
             if response_message.tool_calls:
                 st.write("🕒 Checking the system clock...")
-                time_now = get_current_time()
+                # Extract arguments safely
+                import json
+                tool_call = response_message.tool_calls[0]
+                args = json.loads(tool_call.function.arguments)
+                location = args.get("location")
+                
+                time_now = get_current_time(location)
                 status.update(label="Time retrieved!", state="complete", expanded=False)
                 final_answer = f"The current time is {time_now}."
             else:
@@ -63,3 +86,4 @@ if prompt := st.chat_input("Ask me for the time..."):
         
         st.markdown(final_answer)
         st.session_state.messages.append({"role": "assistant", "content": final_answer})
+
