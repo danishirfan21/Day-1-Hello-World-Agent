@@ -9,7 +9,7 @@ load_dotenv()
 
 # --- 1. SETUP ---
 st.set_page_config(page_title="AI Time Agent", page_icon="🤖")
-st.title("🤖 My First AI Agent")
+st.title("🤖 AI Time Agent")
 st.caption("Powered by Groq & Llama 3.1")
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
