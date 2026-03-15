@@ -1,5 +1,6 @@
 import os
 import pytz
+import requests
 from openai import OpenAI
 from datetime import datetime
 from dotenv import load_dotenv
@@ -24,6 +25,17 @@ def get_current_time(location=None):
         now = datetime.now()
         return f"{now.strftime('%I:%M %p')} (Local Server Time)"
 
+def get_weather(location):
+    try:
+        url = f"https://wttr.in/{location}?format=3"
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text.strip()
+        else:
+            return "Could not retrieve weather."
+    except Exception:
+        return "Weather service currently unavailable."
+
 def run_agent(user_prompt):
     print(f"User: {user_prompt}")
     messages = [{"role": "user", "content": user_prompt}]
@@ -39,6 +51,21 @@ def run_agent(user_prompt):
                     "location": {
                         "type": "string",
                         "description": "The location/timezone (e.g., 'Europe/London', 'Asia/Karachi')."
+                    }
+                }
+            }
+        }
+    }, {
+        "type": "function",
+        "function": {
+            "name": "get_weather",
+            "description": "Get the current weather for a specific location.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The city and country (e.g., 'London, UK', 'Karachi, Pakistan')."
                     }
                 }
             }
@@ -72,6 +99,20 @@ def run_agent(user_prompt):
                     "role": "tool",
                     "name": "get_current_time",
                     "content": time_info,
+                })
+            elif tool_call.function.name == "get_weather":
+                import json
+                args = json.loads(tool_call.function.arguments)
+                location = args.get("location")
+                
+                weather_info = get_weather(location)
+                print(f"Agent: Checked the weather for {location}... {weather_info}.")
+                
+                messages.append({
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": "get_weather",
+                    "content": weather_info,
                 })
         
         second_response = client.chat.completions.create(

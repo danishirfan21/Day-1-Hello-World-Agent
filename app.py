@@ -2,14 +2,15 @@ import streamlit as st
 import os
 import pytz
 from groq import Groq
+import requests
 from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
 
 # --- 1. SETUP ---
-st.set_page_config(page_title="AI Time Agent", page_icon="🤖")
-st.title("🤖 AI Time Agent")
+st.set_page_config(page_title="AI Agent", page_icon="🤖")
+st.title("🤖 AI Agent")
 st.caption("Powered by Groq & Llama 3.1")
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -32,6 +33,17 @@ def get_current_time(location=None):
         now = datetime.now()
         return f"{now.strftime('%I:%M %p')} (Local Server Time)"
 
+def get_weather(location):
+    try:
+        url = f"https://wttr.in/{location}?format=3"
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.text.strip()
+        else:
+            return "Could not retrieve weather."
+    except Exception:
+        return "Weather service currently unavailable."
+
 # --- 3. THE UI LOGIC ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -40,7 +52,7 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("Ask me for the time... e.g., 'What time is it in London?'"):
+if prompt := st.chat_input("Ask me about time or weather... e.g. 'What time is it in London and what's the weather in Tokyo?'"):
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
@@ -64,22 +76,44 @@ if prompt := st.chat_input("Ask me for the time... e.g., 'What time is it in Lon
                             }
                         }
                     }
+                }, {
+                    "type": "function",
+                    "function": {
+                        "name": "get_weather",
+                        "description": "Get the current weather for a specific location.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "location": {
+                                    "type": "string",
+                                    "description": "The city and country (e.g., 'London, UK', 'Karachi, Pakistan')."
+                                }
+                            }
+                        }
+                    }
                 }]
             )
             
             response_message = response.choices[0].message
             
             if response_message.tool_calls:
-                st.write("🕒 Checking the system clock...")
-                # Extract arguments safely
                 import json
-                tool_call = response_message.tool_calls[0]
-                args = json.loads(tool_call.function.arguments)
-                location = args.get("location")
+                tool_results = []
+                for tool_call in response_message.tool_calls:
+                    args = json.loads(tool_call.function.arguments)
+                    location = args.get("location")
+                    
+                    if tool_call.function.name == "get_current_time":
+                        st.write(f"🕒 Checking the system clock for {location or 'Local'}...")
+                        time_now = get_current_time(location)
+                        tool_results.append(f"The current time in {location or 'your area'} is {time_now}.")
+                    elif tool_call.function.name == "get_weather":
+                        st.write(f"🌦️ Checking the weather forecast for {location}...")
+                        weather_info = get_weather(location)
+                        tool_results.append(f"In {location}, the weather is: {weather_info}.")
                 
-                time_now = get_current_time(location)
-                status.update(label="Time retrieved!", state="complete", expanded=False)
-                final_answer = f"The current time is {time_now}."
+                status.update(label="Information retrieved!", state="complete", expanded=False)
+                final_answer = "\n\n".join(tool_results)
             else:
                 status.update(label="Thinking complete", state="complete", expanded=False)
                 final_answer = response_message.content
