@@ -120,11 +120,35 @@ if prompt := st.chat_input("Ask me about time or weather... e.g. 'What time is i
                         weather_info = get_weather(location)
                         tool_results.append(f"Weather: {weather_info}")
                 status.update(
-                    label="✔ Response ready",
+                    label="Response ready",
                     state="complete",
                     expanded=False
                 )
-                final_answer = "\n\n".join(tool_results)
+                raw_data = "\n".join(tool_results)
+                naturalise = client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[
+                        { "role": "system", "content": 
+                        """
+                        You convert tool results into a clear, natural response.
+
+                        Rules:
+                        - Use ONLY the exact data provided in the tool results. Do not add, infer, or interpret anything beyond it.
+                        - Do not describe or characterize the weather (e.g. do not say "chilly", "warm", "pleasant", "mix of conditions", "great day"). Only state what was explicitly given.
+                        - Do not invent information.
+                        - Keep the answer concise (1–2 sentences).
+                        - Combine multiple locations into one natural response.
+
+                        Formatting rules:
+                        - Time must use 12-hour format with AM/PM (example: 10:29 PM).
+                        - Temperature must use Celsius format like 27°C.
+                        - Report weather conditions and temperature exactly as returned by the tool, word for word.
+                        """
+                        },
+                        { "role": "user", "content": f"Original question: {prompt}\n\nTool results:\n{raw_data}" }
+                    ]
+                )
+                final_answer = naturalise.choices[0].message.content
             else:
                 status.update(label="Thinking complete", state="complete", expanded=False)
                 final_answer = response_message.content
