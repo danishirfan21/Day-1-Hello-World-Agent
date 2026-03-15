@@ -1,6 +1,6 @@
-# 🤖 Groq Time Agent
+# 🤖 Groq AI Assistant
 
-A lightning-fast AI agent built with Python, powered by Groq's Llama 3.1 models. This agent demonstrates the core concepts of "Function Calling" (Tools) where the AI can interact with the real world—in this case, checking the local system time.
+A lightning-fast AI agent built with Python, powered by Groq's Llama 3.1 models. This agent demonstrates the core concepts of "Function Calling" (Tools) where the AI can interact with the real world—specifically checking current time and weather across the globe.
 
 ### 🌐 Live Demo
 [Check out the live agent here!](https://danish-time-agent.streamlit.app/)
@@ -9,11 +9,12 @@ A lightning-fast AI agent built with Python, powered by Groq's Llama 3.1 models.
 ## 🚀 Features
 
 - **Groq Powered**: Uses `llama-3.1-8b-instant` for near-instant responses.
-- **Function Calling**: Real-time integration with Python functions.
+- **Function Calling**: Real-time integration with Python functions to fetch data.
 - **Environment Driven**: Secure configuration using `.env` files.
 - **Interactive UI**: Built with Streamlit for a clean, chat-like experience.
-- **Global Timezone Support**: Powered by `pytz` to accurately check time anywhere in the world.
-- **Agentic Loop**: The AI thinks, calls a tool, observes the result, and responds naturally.
+- **Global Timezone Support**: Powered by `pytz` to accurately check time anywhere.
+- **Weather Insights**: Dynamically fetches weather data using the `wttr.in` service.
+- **Agentic Loop**: The AI thinks, calls tools, observes results, and responds naturally.
 
 
 
@@ -60,8 +61,10 @@ Or run the terminal-based agent:
 
 ## 🧠 How it Works
 
-1. **User asks a question**: "What time is it in Tokyo?"
-2. **AI Decides**: The model identifies the location and calls the `get_current_time` tool with `location="Asia/Tokyo"`.
-3. **Tool Execution**: Python uses `pytz` to calculate the exact time for that zone.
-4. **Final Response**: The AI gives you the precise time for the requested city.
+1. **User asks a question**: "What's the weather in London and what time is it there?"
+2. **AI Decides**: The model identifies the location and realizes it needs two tools.
+3. **Tool Execution**: 
+   - Calls `get_current_time` for the timezone.
+   - Calls `get_weather` to fetch atmospheric data.
+4. **Final Response**: The AI combines the data and responds: "It's 2:00 PM in London with light rain and a temperature of 15°C."
 
