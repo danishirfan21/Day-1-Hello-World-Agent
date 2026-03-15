@@ -1,5 +1,6 @@
 import os
 import pytz
+import json
 import requests
 from groq import Groq
 from datetime import datetime
@@ -82,11 +83,25 @@ def run_agent(user_prompt):
     tool_calls = response_message.tool_calls
 
     if tool_calls:
-        messages.append(response_message)
+        # Convert the message with tool calls to a dict for safe serialization
+        messages.append({
+            "role": "assistant",
+            "content": response_message.content or "",
+            "tool_calls": [
+                {
+                    "id": tool_call.id,
+                    "type": "function",
+                    "function": {
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                    },
+                }
+                for tool_call in tool_calls
+            ],
+        })
 
         for tool_call in tool_calls:
             if tool_call.function.name == "get_current_time":
-                import json
                 args = json.loads(tool_call.function.arguments)
                 location = args.get("location")
 
@@ -100,7 +115,6 @@ def run_agent(user_prompt):
                     "content": time_info,
                 })
             elif tool_call.function.name == "get_weather":
-                import json
                 args = json.loads(tool_call.function.arguments)
                 location = args.get("location")
 

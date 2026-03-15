@@ -1,8 +1,9 @@
 import streamlit as st
 import os
 import pytz
-from groq import Groq
+import json
 import requests
+from groq import Groq
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -103,8 +104,22 @@ if prompt := st.chat_input("Ask me about time or weather... e.g. 'What time is i
             response_message = response.choices[0].message
             
             if response_message.tool_calls:
-                import json
-                st.session_state.messages.append(response_message)
+                # Convert the message with tool calls to a dict for safe serialization
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": response_message.content or "",
+                    "tool_calls": [
+                        {
+                            "id": tool_call.id,
+                            "type": "function",
+                            "function": {
+                                "name": tool_call.function.name,
+                                "arguments": tool_call.function.arguments,
+                            },
+                        }
+                        for tool_call in response_message.tool_calls
+                    ],
+                })
 
                 for tool_call in response_message.tool_calls:
                     args = json.loads(tool_call.function.arguments)
