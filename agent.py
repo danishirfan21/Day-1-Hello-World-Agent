@@ -75,7 +75,7 @@ def get_weather(location):
             condition = conditions.get(code, "current conditions")
             return f"Weather in {city_name}: {temp}°C, {condition}"
         else:
-            return "Could not retrieve current weather data."
+            return f"Error: 'current' key missing. API Response: {weather_data}"
     except Exception as e:
         return f"Weather service error: {str(e)}"
 

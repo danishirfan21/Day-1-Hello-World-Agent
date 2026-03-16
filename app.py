@@ -115,7 +115,7 @@ def get_weather(location):
             return f"Weather in {city_name}: {temp}°C, {condition}"
         else:
             print(f"❌ Missing 'current' data in response: {weather_data}", flush=True)
-            return "Could not retrieve current weather data."
+            return f"Error: 'current' key missing. API Response: {weather_data}"
 
     except Exception as e:
         print(f"💥 Weather function crashed: {str(e)}", flush=True)
