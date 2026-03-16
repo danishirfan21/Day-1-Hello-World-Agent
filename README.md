@@ -3,7 +3,7 @@
 A lightning-fast AI Agent built with Python, powered by Groq's Llama 3.1 models. **Nimbus** demonstrates the core concepts of "Function Calling" (Tools) where the AI can interact with the real world—specifically checking current time and weather across the globe.
 
 ### 🌐 Live Demo
-[Check out Nimbus here!](https://danish-time-agent.streamlit.app/)
+[Check out Nimbus here!](https://nimbus-ai-agent.streamlit.app/)
 
 
 ## 🚀 Features
