@@ -5,10 +5,17 @@ from groq import Groq
 import requests
 from datetime import datetime
 from dotenv import load_dotenv
+import logging
+import sys
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-print("🚀 App Refresh: Script starting...")
+print("🚀 App Refresh: Script starting...", flush=True)
+logger.info("🚀 App Refresh: Script starting...")
 
 
 # --- 1. SETUP ---
@@ -59,10 +66,12 @@ if prompt := st.chat_input("Ask me about time or weather... e.g. 'What time is i
     st.chat_message("user").markdown(prompt)
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    print(f"📝 User Prompt: {prompt}")
+    print(f"📝 User Prompt: {prompt}", flush=True)
+    logger.info(f"📝 User Prompt: {prompt}")
     with st.chat_message("assistant"):
         with st.status("Agent is thinking...", expanded=True) as status:
-            print("🤖 Calling LLM for tool detection...")
+            print("🤖 Calling LLM for tool detection...", flush=True)
+            logger.info("🤖 Calling LLM for tool detection...")
             response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[{"role": "user", "content": prompt}],
@@ -107,7 +116,8 @@ if prompt := st.chat_input("Ask me about time or weather... e.g. 'What time is i
                 for tool_call in response_message.tool_calls:
                     args = json.loads(tool_call.function.arguments)
                     location = args.get("location")
-                    print(f"🛠️ Executing tool: {tool_call.function.name} for {location}")
+                    print(f"🛠️ Executing tool: {tool_call.function.name} for {location}", flush=True)
+                    logger.info(f"🛠️ Executing tool: {tool_call.function.name} for {location}")
                     st.write(f"🔍 DEBUG: Calling `{tool_call.function.name}` for `{location}`")
 
 
@@ -117,8 +127,10 @@ if prompt := st.chat_input("Ask me about time or weather... e.g. 'What time is i
                             state="running"
                         )
                         time_now = get_current_time(location)
-                        print(f"🕒 Tool Result (Time): {time_now}")
+                        print(f"🕒 Tool Result (Time): {time_now}", flush=True)
+                        logger.info(f"🕒 Tool Result (Time): {time_now}")
                         st.write(f"🕒 Tool Result (Time): `{time_now}`")
+                        st.toast(f"Time fetched: {time_now}")
                         tool_results.append(
                             f"The current time in {location or 'your area'} is {time_now}."
                         )
@@ -128,8 +140,10 @@ if prompt := st.chat_input("Ask me about time or weather... e.g. 'What time is i
                             state="running"
                         )
                         weather_info = get_weather(location)
-                        print(f"🌤 Tool Result (Weather): {weather_info}")
+                        print(f"🌤 Tool Result (Weather): {weather_info}", flush=True)
+                        logger.info(f"🌤 Tool Result (Weather): {weather_info}")
                         st.write(f"🌤 Tool Result (Weather): `{weather_info}`")
+                        st.toast(f"Weather fetched: {weather_info}")
                         tool_results.append(f"Weather: {weather_info}")
                 status.update(
                     label="Response ready",
